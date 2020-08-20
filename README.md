@@ -83,7 +83,7 @@ useEffect(() => {
   {loading ? (
     <p className="loading">Loading…</p>
   ) : (
-    <CharacterList characters={characters} />
+    <Characters characters={characters} />
   )}
   {error && <p className="error">{error.message}</p>}
 </section>
@@ -252,7 +252,7 @@ const useFetch = (url, dependencies = [], formatResponse = () => {}) => {
 };
 ```
 
-## Dispensing Asynchronous Actions
+## Despensing Asynchronous Actions
 
 **Important**: We're going to check out the `asynchronous-actions` branch.
 
@@ -262,17 +262,14 @@ How could we right a simple thunk reducer?
 const useThunkReducer = (reducer, initialState) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const enhancedDispatch = useCallback(
-    action => {
-      if (typeof action === 'function') {
-        console.log('It is a thunk');
-        action(dispatch);
-      } else {
-        dispatch(action);
-      }
-    },
-    [dispatch],
-  );
+  const enhancedDispatch = action => {
+    if (typeof action === 'function') {
+      console.log('It is a thunk');
+      action(dispatch);
+    } else {
+      dispatch(action);
+    }
+  };
 
   return [state, enhancedDispatch];
 };
@@ -280,113 +277,17 @@ const useThunkReducer = (reducer, initialState) => {
 
 Now, we just use that reducer instead.
 
-We can have a totally separate function for fetching the data that our state management doesn't know anything about.
+---
 
 ```js
-const fetchCharacters = dispatch => {
-  dispatch({ type: 'FETCHING' });
-  fetch(endpoint + '/characters')
+useEffect(() => {
+  console.log('Fetching');
+  fetch(`${endpoint}/search/${query}`)
     .then(response => response.json())
     .then(response => {
-      dispatch({
-        type: 'RESPONSE_COMPLETE',
-        payload: {
-          characters: response.characters,
-        },
-      });
+      console.log({ response });
+      setCharacters(Object.values(response.characters));
     })
-    .catch(error => dispatch({ type: error, payload: { error } }));
-};
-```
-
-#### Exercise: Implementing Character Search
-
-There is a `CharacterSearch` component. Can you you implement a feature where we update the list based on the search field?
-
-```js
-import React from 'react';
-import endpoint from './endpoint';
-
-const SearchCharacters = React.memo(({ dispatch }) => {
-  const [query, setQuery] = React.useState('');
-
-  React.useEffect(() => {
-    dispatch({ type: 'FETCHING' });
-    fetch(endpoint + '/search/' + query)
-      .then(response => response.json())
-      .then(response => {
-        dispatch({
-          type: 'RESPONSE_COMPLETE',
-          payload: {
-            characters: response.characters,
-          },
-        });
-      })
-      .catch(error => dispatch({ type: error, payload: { error } }));
-  }, [query, dispatch]);
-
-  return (
-    <input
-      onChange={event => setQuery(event.target.value)}
-      placeholder="Search Here"
-      type="search"
-      value={query}
-    />
-  );
-});
-
-export default SearchCharacters;
-```
-
-## The Perils of `useEffect` and Dependencies
-
-We're going to need to important more things.
-
-```js
-import { BrowserRouter as Router, Route } from 'react-router-dom';
-
-import CharacterList from './CharacterList';
-import CharacterView from './CharacterView';
-```
-
-Now, we'll add this little tidbit.
-
-```js
-<section className="CharacterView">
-  <Route path="/characters/:id" component={CharacterView} />
-</section>
-```
-
-In `CharacterView`, we'll do the following refactoring:
-
-```js
-const CharacterView = ({ match }) => {
-  const [character, setCharacter] = useState({});
-
-  useEffect(() => {
-    fetch(endpoint + '/characters/' + match.params.id)
-      .then(response => response.json())
-      .then(response => setCharacter(response.character))
-      .catch(console.error);
-  }, []);
-
-  // …
-};
-```
-
-I have an ESLint plugin that solves most of this for us.
-
-```js
-const CharacterView = ({ match }) => {
-  const [character, setCharacter] = useState({});
-
-  useEffect(() => {
-    fetch(endpoint + '/characters/' + match.params.id)
-      .then(response => response.json())
-      .then(response => setCharacter(response.character))
-      .catch(console.error);
-  }, []);
-
-  // …
-};
+    .catch(console.error);
+}, [query]);
 ```

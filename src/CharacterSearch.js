@@ -1,12 +1,12 @@
 import React from 'react';
 
-const SearchCharacters = () => {
+const SearchCharacters = ({ query, onChange: handleChange }) => {
   return (
     <input
-      onChange={event => console.log(event.target.value)}
+      onChange={event => handleChange(event.target.value)}
       placeholder="Search Here"
       type="search"
-      value={''}
+      value={query}
     />
   );
 };
